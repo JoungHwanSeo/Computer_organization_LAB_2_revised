@@ -533,7 +533,7 @@ mux_2x1 m_mux_2x1(
 
 //write data jump도 고려해줘야함!!!!!!!
 always@(*) begin
-  case(EX_jump)
+  case(WB_jump)  //EX_jump -> WB_jump....실화냐
     2'b00 : WB_write_data = WB_tmp_write_data;
     2'b01 : WB_write_data = WB_tmp_write_data; //branch인 경우인데 이는 어차피 update안됨. 아무거나 넣어줌
     2'b10 : WB_write_data = WB_PC_PLUS_4; //jump
