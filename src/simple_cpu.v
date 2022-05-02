@@ -74,6 +74,8 @@ wire ID_alu_src;
 wire ID_reg_write;
 wire [1:0] ID_jump;
 
+wire ID_mem_write_tmp; // 선언 for hazard
+wire ID_reg_write_tmp;
 
 ////////////////////////////////////////
 ////////////////////////////////////////
@@ -179,14 +181,15 @@ always @(posedge clk) begin
 end
 
 ////////나중에 고쳐야함!!!!!///control hazard해결해야해서...
-assign NEXT_PC = IF_PC_PLUS_4;
+// assign NEXT_PC = IF_PC_PLUS_4;
 ///////나중에 고쳐야함!!!!!
 
+wire [DATA_WIDTH-1:0] IF_instruction_tmp; //추가 선언
 /* instruction: read current instruction from inst mem */
 instruction_memory m_instruction_memory(
   .address    (PC),
 
-  .instruction(IF_instruction)
+  .instruction(IF_instruction_tmp)
 );
 
 /* forward to IF/ID stage registers */
@@ -210,10 +213,27 @@ ifid_reg m_ifid_reg(
 /* m_hazard: hazard detection unit */
 hazard m_hazard(
   // TODO: implement hazard detection unit & do wiring
+  .ex_alu_result(EX_ALU_result),
+  .ex_branch_target(EX_PC_branch_target),
+  .ex_branch_taken(EX_taken),
+  .ex_jump(EX_jump),
+  .if_pc_plus_4(IF_PC_PLUS_4),
+  .id_mem_write(ID_mem_write_tmp), ///
+  .id_reg_write(ID_reg_write_tmp), ///
+  .if_instruction(IF_instruction_tmp),
+
+  .NEXT_PC(NEXT_PC),
+  .id_mem_write_real(ID_mem_write),
+  .id_reg_write_real(ID_reg_write),
+  .if_instruction_real(IF_instruction)
 );
 
 /* m_control: control unit */
 //control signal을 ID단계에서 추출
+
+// wire ID_mem_write_tmp; // 선언 for hazard
+// wire ID_reg_write_tmp;
+
 control m_control(
   .opcode(ID_opcode),
 
@@ -222,9 +242,9 @@ control m_control(
   .mem_read(ID_mem_read),
   .mem_to_reg(ID_mem_to_reg),
   .alu_op(ID_alu_op),
-  .mem_write(ID_mem_write),
+  .mem_write(ID_mem_write_tmp),
   .alu_src(ID_alu_src),
-  .reg_write(ID_reg_write)
+  .reg_write(ID_reg_write_tmp)
 );
 
 /* m_imm_generator: immediate generator */
@@ -533,7 +553,7 @@ mux_2x1 m_mux_2x1(
 
 //write data jump도 고려해줘야함!!!!!!!
 always@(*) begin
-  case(WB_jump)  //EX_jump -> WB_jump....실화냐
+  case(WB_jump)  //EX_jump -> WB_jump....실화냐 이런 실수를...
     2'b00 : WB_write_data = WB_tmp_write_data;
     2'b01 : WB_write_data = WB_tmp_write_data; //branch인 경우인데 이는 어차피 update안됨. 아무거나 넣어줌
     2'b10 : WB_write_data = WB_PC_PLUS_4; //jump
