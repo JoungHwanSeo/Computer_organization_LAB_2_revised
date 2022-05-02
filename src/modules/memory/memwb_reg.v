@@ -22,6 +22,10 @@ module memwb_reg #(
   input [DATA_WIDTH-1:0] mem_readdata,
   input [DATA_WIDTH-1:0] mem_alu_result,
   input [4:0] mem_rd,
+
+  ///////내가 추가!!!!///////
+  input [6:0] mem_opcode,
+  //////////////////////////
   
   //////////////////////////////////////
   // Outputs
@@ -35,7 +39,11 @@ module memwb_reg #(
   
   output reg [DATA_WIDTH-1:0] wb_readdata,
   output reg [DATA_WIDTH-1:0] wb_alu_result,
-  output reg [4:0] wb_rd
+  output reg [4:0] wb_rd,
+
+  ///////내가 추가!!!!///////
+  output reg [6:0] wb_opcode
+  //////////////////////////
 );
 
 // TODO: Implement MEM/WB pipeline register module

@@ -28,6 +28,10 @@ module exmem_reg #(
   input [DATA_WIDTH-1:0] ex_writedata,
   input [2:0] ex_funct3,
   input [4:0] ex_rd,
+
+  //////내가 추가!!!///////
+  input [6:0] ex_opcode,
+  ////////////////////////
   
   //////////////////////////////////////
   // Outputs
@@ -49,7 +53,11 @@ module exmem_reg #(
   output reg [DATA_WIDTH-1:0] mem_alu_result,
   output reg [DATA_WIDTH-1:0] mem_writedata,
   output reg [2:0] mem_funct3,
-  output reg [4:0] mem_rd
+  output reg [4:0] mem_rd,
+
+  //////내가 추가!!!!!!!!!!!!
+  output reg [6:0] mem_opcode
+  //////////////////
 );
 
 // TODO: Implement EX / MEM pipeline register module
@@ -66,6 +74,8 @@ module exmem_reg #(
     mem_writedata <= ex_writedata;
     mem_funct3 <= ex_funct3;
     mem_rd <= ex_rd;
+
+    mem_opcode <= ex_opcode;//추가됨
   end
 
 endmodule

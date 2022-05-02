@@ -38,6 +38,10 @@ module idex_reg #(
   input [4:0] id_rs2,
   input [4:0] id_rd,
 
+  /////////////////////내가 추가!!!!
+  input [6:0] id_opcode,
+  ///////////////////////
+
   //////////////////////////////////////
   // Outputs
   //////////////////////////////////////
@@ -65,8 +69,11 @@ module idex_reg #(
   output reg [DATA_WIDTH-1:0] ex_readdata2,
   output reg [4:0] ex_rs1,
   output reg [4:0] ex_rs2,
-  output reg [4:0] ex_rd
+  output reg [4:0] ex_rd,
 
+  /////////////내가 추가!!!
+  output reg [6:0] ex_opcode
+  ///////////////////
 );
 
 // TODO: Implement ID/EX pipeline register module
@@ -89,6 +96,7 @@ module idex_reg #(
     ex_rs1 <= id_rs1;
     ex_rs2 <= id_rs2;
     ex_rd <= id_rd;
+    ex_opcode <= id_opcode;
   end
 
 endmodule

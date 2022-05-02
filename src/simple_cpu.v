@@ -47,14 +47,14 @@ wire [4:0] ID_rs1, ID_rs2, ID_rd;
 
 wire [DATA_WIDTH-1:0] ID_sextimm;
 
-wire [6:0] opcode;
+wire [6:0] ID_opcode;
 wire [6:0] ID_funct7;
 wire [2:0] ID_funct3;
 
 wire [31:0] ID_readdata1, ID_readdata2;
 
 // instruction fields
-assign opcode = ID_instruction[6:0];
+assign ID_opcode = ID_instruction[6:0];
 
 assign ID_funct7 = ID_instruction[31:25];
 assign ID_funct3 = ID_instruction[14:12];
@@ -102,6 +102,10 @@ wire [DATA_WIDTH-1:0] EX_readdata2;
 wire [4:0] EX_rs1;
 wire [4:0] EX_rs2;
 wire [4:0] EX_rd;
+wire [6:0] EX_opcode;  //추가됨!!!
+
+wire [1:0] EX_ForwardA;
+wire [1:0] EX_ForwardB;
 
 
 wire [DATA_WIDTH-1:0] EX_ALU_result;
@@ -126,6 +130,8 @@ wire [DATA_WIDTH-1:0] MEM_writedata;
 wire [2:0] MEM_funct3;
 wire [4:0] MEM_rd;
 
+wire [6:0] MEM_opcode; //추가됨!!!
+
 /////////////////WB필요 wire
 wire[DATA_WIDTH-1:0] WB_PC_PLUS_4;
 
@@ -139,6 +145,8 @@ wire [4:0] WB_rd;
 
 reg [DATA_WIDTH-1:0] WB_write_data;
 wire [DATA_WIDTH-1:0] WB_tmp_write_data;
+
+wire [6:0] WB_opcode; //추가됨!!!
 /////////////////////////
 
 // 1) Pipeline registers (wires to / from pipeline register modules)
@@ -207,7 +215,7 @@ hazard m_hazard(
 /* m_control: control unit */
 //control signal을 ID단계에서 추출
 control m_control(
-  .opcode(opcode),
+  .opcode(ID_opcode),
 
   .jump(ID_jump),
   .branch(ID_branch),
@@ -261,6 +269,7 @@ idex_reg m_idex_reg(
   .id_rs1       (ID_rs1),
   .id_rs2       (ID_rs2),
   .id_rd        (ID_rd),
+  .id_opcode    (ID_opcode),  ///내가 추가!!!
 
   .ex_PC        (EX_PC),
   .ex_pc_plus_4 (EX_PC_PLUS_4),
@@ -279,7 +288,8 @@ idex_reg m_idex_reg(
   .ex_readdata2 (EX_readdata2),
   .ex_rs1       (EX_rs1),
   .ex_rs2       (EX_rs2),
-  .ex_rd        (EX_rd)
+  .ex_rd        (EX_rd),
+  .ex_opcode    (EX_opcode)  ///내가 추가!!!
 );
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -321,11 +331,16 @@ alu_control m_alu_control(
   .alu_func (EX_ALU_func)
 );
 
+///최종적으로 alu에 들어갈 wire Forwarding구현하면서 추가하였음
+wire [DATA_WIDTH-1:0] alu_in_1;
+wire [DATA_WIDTH-1:0] alu_in_2;
+/////////////////////////////////////////////////////////////
+
 /* m_alu */
 alu m_alu(
   .alu_func (EX_ALU_func),
-  .in_a     (EX_readdata1), 
-  .in_b     (EX_ALU_in), 
+  .in_a     (alu_in_1), 
+  .in_b     (alu_in_2), 
 
   .result   (EX_ALU_result),
   .check    (EX_check)
@@ -340,8 +355,39 @@ mux_2x1 m_alu_mux(
     .out(EX_ALU_in)
 );
 
+
+mux_3x1 alu_in_1_mux(
+  .select(EX_ForwardA),
+  .in1(EX_readdata1),
+  .in2(MEM_alu_result),
+  .in3(WB_alu_result),
+
+  .out(alu_in_1)
+);
+
+mux_3x1 alu_in_2_mux(
+  .select(EX_ForwardB),
+  .in1(EX_ALU_in),
+  .in2(MEM_alu_result),
+  .in3(WB_alu_result),
+
+  .out(alu_in_2)
+);
+
+
 forwarding m_forwarding(
   // TODO: implement forwarding unit & do wiring
+  //input
+  .ex_rs1     (EX_rs1),
+  .ex_rs2     (EX_rs2),
+  .mem_rd     (MEM_rd),
+  .wb_rd      (WB_rd),
+  .mem_opcode (MEM_opcode),
+  .wb_opcode  (WB_opcode),
+
+  //output
+  .forwardA   (EX_ForwardA),
+  .forwardB   (EX_ForwardB)
 );
 
 /* forward to EX/MEM stage registers */
@@ -361,6 +407,8 @@ exmem_reg m_exmem_reg(
   ///////write data jump인 경우 PC+4.... 어디서 이를 mux 해줘야..
   .ex_funct3      (EX_funct3),
   .ex_rd          (EX_rd),
+
+  .ex_opcode      (EX_opcode),
   
   .mem_pc_plus_4  (MEM_PC_PLUS_4),
   .mem_pc_target  (MEM_PC_target),
@@ -373,7 +421,9 @@ exmem_reg m_exmem_reg(
   .mem_alu_result (MEM_alu_result),
   .mem_writedata  (MEM_writedata),
   .mem_funct3     (MEM_funct3),
-  .mem_rd         (MEM_rd)
+  .mem_rd         (MEM_rd),
+
+  .mem_opcode     (MEM_opcode)
 );
 
 
@@ -457,13 +507,17 @@ memwb_reg m_memwb_reg(
   .mem_alu_result (MEM_alu_result),
   .mem_rd         (MEM_rd),
 
+  .mem_opcode     (MEM_opcode), //추가됨
+
   .wb_pc_plus_4   (WB_PC_PLUS_4),
   .wb_jump        (WB_jump),  //이거 써서 register update값 조절!!!!!!
   .wb_memtoreg    (WB_memtoreg),
   .wb_regwrite    (WB_regwrite),
   .wb_readdata    (WB_readdata),
   .wb_alu_result  (WB_alu_result),
-  .wb_rd          (WB_rd)
+  .wb_rd          (WB_rd),
+
+  .wb_opcode      (WB_opcode)
 );
 
 
