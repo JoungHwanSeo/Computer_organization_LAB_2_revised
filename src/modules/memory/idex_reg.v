@@ -42,6 +42,10 @@ module idex_reg #(
   input [6:0] id_opcode,
   ///////////////////////
 
+  input stall, ///stall logic위해 추가
+
+  input flush,  /// contorl hazard서 flush logic위해 추가  //1:48 최근
+
   //////////////////////////////////////
   // Outputs
   //////////////////////////////////////
@@ -76,27 +80,160 @@ module idex_reg #(
   ///////////////////
 );
 
+
+// wire controls;
+// assign controls = {id_jump, id_branch, id_memread, id_memtoreg, id_aluop, id_memwrite, id_alusrc, id_regwrite}
+
 // TODO: Implement ID/EX pipeline register module
   always@(posedge clk) begin
-    ex_PC <= id_PC;
-    ex_pc_plus_4 <=id_pc_plus_4;
-    ex_branch <= id_branch;
-    ex_aluop <= id_aluop;
-    ex_alusrc <= id_alusrc;
-    ex_jump <= id_jump;
-    ex_memread <= id_memread;
-    ex_memwrite <= id_memwrite;
-    ex_memtoreg <= id_memtoreg;
-    ex_regwrite <= id_regwrite;
-    ex_sextimm <= id_sextimm;
-    ex_funct7 <= id_funct7;
-    ex_funct3 <= id_funct3;
-    ex_readdata1 <= id_readdata1;
-    ex_readdata2 <= id_readdata2;
-    ex_rs1 <= id_rs1;
-    ex_rs2 <= id_rs2;
-    ex_rd <= id_rd;
-    ex_opcode <= id_opcode;
+    // ex_PC <= id_PC;
+    // ex_pc_plus_4 <=id_pc_plus_4;
+    // ex_branch <= id_branch;
+    // ex_aluop <= id_aluop;
+    // ex_alusrc <= id_alusrc;
+    // ex_jump <= id_jump;
+    // ex_memread <= id_memread;
+    // ex_memwrite <= id_memwrite;
+    // ex_memtoreg <= id_memtoreg;
+    // ex_regwrite <= id_regwrite;
+    // ex_sextimm <= id_sextimm;
+    // ex_funct7 <= id_funct7;
+    // ex_funct3 <= id_funct3;
+    // ex_readdata1 <= id_readdata1;
+    // ex_readdata2 <= id_readdata2;
+    // ex_rs1 <= id_rs1;
+    // ex_rs2 <= id_rs2;
+    // ex_rd <= id_rd;
+    // ex_opcode <= id_opcode;
+
+    //stall과 flush 동시에 일어나지 않음! Nop... 동시에 일어날 수도 있겠네.. ㅎㅎㅎㅎㅎㅎ
+
+    if(stall == 1) begin
+      if(flush == 1) begin
+        ex_PC <=        ex_PC;
+        ex_pc_plus_4 <= ex_pc_plus_4;
+        ex_branch <= 0;
+        ex_aluop <= 0;
+        ex_alusrc <= 0;
+        ex_jump <= 0;
+        ex_memread <= 0;
+        ex_memwrite <= 0;
+        ex_memtoreg <= 0;
+        ex_regwrite <= 0;
+        ex_sextimm <=   ex_sextimm;
+        ex_funct7 <=    ex_funct7;
+        ex_funct3 <=    ex_funct3;
+        ex_readdata1 <= ex_readdata1;
+        ex_readdata2 <= ex_readdata2;
+        ex_rs1 <=       ex_rs1;
+        ex_rs2 <=       ex_rs2;
+        ex_rd <=        ex_rd;
+        ex_opcode <=    ex_opcode;
+      end
+      else begin
+        ex_PC <=        ex_PC;
+        ex_pc_plus_4 <= ex_pc_plus_4;
+        ex_branch <=    ex_branch;
+        ex_aluop <=     ex_aluop;
+        ex_alusrc <=    ex_alusrc;
+        ex_jump <=      ex_jump;
+        ex_memread <=   ex_memread;
+        ex_memwrite <=  ex_memwrite;
+        ex_memtoreg <=  ex_memtoreg;
+        ex_regwrite <=  ex_regwrite;
+        ex_sextimm <=   ex_sextimm;
+        ex_funct7 <=    ex_funct7;
+        ex_funct3 <=    ex_funct3;
+        ex_readdata1 <= ex_readdata1;
+        ex_readdata2 <= ex_readdata2;
+        ex_rs1 <=       ex_rs1;
+        ex_rs2 <=       ex_rs2;
+        ex_rd <=        ex_rd;
+        ex_opcode <=    ex_opcode;
+      end
+      // ex_PC <=        ex_PC;
+      // ex_pc_plus_4 <= ex_pc_plus_4;
+      // ex_branch <=    ex_branch;
+      // ex_aluop <=     ex_aluop;
+      // ex_alusrc <=    ex_alusrc;
+      // ex_jump <=      ex_jump;
+      // ex_memread <=   ex_memread;
+      // ex_memwrite <=  ex_memwrite;
+      // ex_memtoreg <=  ex_memtoreg;
+      // ex_regwrite <=  ex_regwrite;
+      // ex_sextimm <=   ex_sextimm;
+      // ex_funct7 <=    ex_funct7;
+      // ex_funct3 <=    ex_funct3;
+      // ex_readdata1 <= ex_readdata1;
+      // ex_readdata2 <= ex_readdata2;
+      // ex_rs1 <=       ex_rs1;
+      // ex_rs2 <=       ex_rs2;
+      // ex_rd <=        ex_rd;
+      // ex_opcode <=    ex_opcode;
+    end
+    else begin
+      if(flush == 1) begin
+        ex_PC <= id_PC;
+        ex_pc_plus_4 <=id_pc_plus_4;
+        ex_branch <= 0;
+        ex_aluop <= 0;
+        ex_alusrc <= 0;
+        ex_jump <= 0;
+        ex_memread <= 0;
+        ex_memwrite <= 0;
+        ex_memtoreg <= 0;
+        ex_regwrite <= 0;
+        ex_sextimm <= id_sextimm;
+        ex_funct7 <= id_funct7;
+        ex_funct3 <= id_funct3;
+        ex_readdata1 <= id_readdata1;
+        ex_readdata2 <= id_readdata2;
+        ex_rs1 <= id_rs1;
+        ex_rs2 <= id_rs2;
+        ex_rd <= id_rd;
+        ex_opcode <= id_opcode;
+      end
+      else begin
+         ex_PC <= id_PC;
+        ex_pc_plus_4 <=id_pc_plus_4;
+        ex_branch <= id_branch;
+        ex_aluop <= id_aluop;
+        ex_alusrc <= id_alusrc;
+        ex_jump <= id_jump;
+        ex_memread <= id_memread;
+        ex_memwrite <= id_memwrite;
+        ex_memtoreg <= id_memtoreg;
+        ex_regwrite <= id_regwrite;
+        ex_sextimm <= id_sextimm;
+        ex_funct7 <= id_funct7;
+        ex_funct3 <= id_funct3;
+        ex_readdata1 <= id_readdata1;
+        ex_readdata2 <= id_readdata2;
+        ex_rs1 <= id_rs1;
+        ex_rs2 <= id_rs2;
+        ex_rd <= id_rd;
+        ex_opcode <= id_opcode;
+      end
+      // ex_PC <= id_PC;
+      // ex_pc_plus_4 <=id_pc_plus_4;
+      // ex_branch <= id_branch;
+      // ex_aluop <= id_aluop;
+      // ex_alusrc <= id_alusrc;
+      // ex_jump <= id_jump;
+      // ex_memread <= id_memread;
+      // ex_memwrite <= id_memwrite;
+      // ex_memtoreg <= id_memtoreg;
+      // ex_regwrite <= id_regwrite;
+      // ex_sextimm <= id_sextimm;
+      // ex_funct7 <= id_funct7;
+      // ex_funct3 <= id_funct3;
+      // ex_readdata1 <= id_readdata1;
+      // ex_readdata2 <= id_readdata2;
+      // ex_rs1 <= id_rs1;
+      // ex_rs2 <= id_rs2;
+      // ex_rd <= id_rd;
+      // ex_opcode <= id_opcode;
+    end
   end
 
 endmodule

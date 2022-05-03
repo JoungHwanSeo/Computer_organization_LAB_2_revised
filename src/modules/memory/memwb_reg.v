@@ -55,6 +55,8 @@ always@(posedge clk) begin
   wb_readdata <= mem_readdata;
   wb_alu_result <= mem_alu_result;
   wb_rd <= mem_rd;
+
+  wb_opcode <= mem_opcode;
 end
 
 endmodule

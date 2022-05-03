@@ -31,6 +31,8 @@ module exmem_reg #(
 
   //////내가 추가!!!///////
   input [6:0] ex_opcode,
+
+  input ex_mem_flush,
   ////////////////////////
   
   //////////////////////////////////////
@@ -66,16 +68,26 @@ module exmem_reg #(
     mem_pc_target <= ex_pc_target;
     mem_taken <= ex_taken;
     mem_memread <= ex_memread;
-    mem_memwrite <= ex_memwrite;
+    // mem_memwrite <= ex_memwrite;
     mem_jump <= ex_jump;
     mem_memtoreg <= ex_memtoreg;
-    mem_regwrite <= ex_regwrite;
+    // mem_regwrite <= ex_regwrite;
     mem_alu_result <= ex_alu_result;
     mem_writedata <= ex_writedata;
     mem_funct3 <= ex_funct3;
     mem_rd <= ex_rd;
 
     mem_opcode <= ex_opcode;//추가됨
+
+    if(ex_mem_flush == 1) begin
+      mem_memwrite <= 0;
+      mem_regwrite <= 0;
+    end
+    else begin
+      mem_memwrite <= ex_memwrite;
+      mem_regwrite <= ex_regwrite;
+    end
+
   end
 
 endmodule

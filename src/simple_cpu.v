@@ -21,6 +21,10 @@ module simple_cpu
 ///////////////////////////////////////////////////////////////////////////////
 // e.g., wire [DATA_WIDTH-1:0] if_pc_plus_4;
 
+//load stall에서 추가
+wire stall;
+wire EX_MEM_flush;
+/////////////////////////
 
 wire [DATA_WIDTH-1:0] IF_PC_PLUS_4;  //IF에서 PC+4값을 저장할 곳
 wire [DATA_WIDTH-1:0] IF_instruction; //일단 예측된 PC에서 바로 나온 instruction
@@ -149,6 +153,14 @@ wire [DATA_WIDTH-1:0] WB_tmp_write_data;
 wire [6:0] WB_opcode; //추가됨!!!
 /////////////////////////
 
+wire [9:0] ID_control;
+wire [9:0] EX_control;
+
+//디버깅용
+assign ID_control = {ID_jump,ID_branch,ID_mem_read,ID_mem_to_reg,ID_alu_op,ID_mem_write,ID_alu_src,ID_reg_write};
+assign EX_control = {EX_jump,EX_branch,EX_memread,EX_memtoreg,EX_aluop,EX_memwrite,EX_alusrc,EX_regwrite};
+
+
 // 1) Pipeline registers (wires to / from pipeline register modules)
 // 2) In / Out ports for other modules
 // 3) Additional wires for multiplexers or other mdoules you instantiate
@@ -183,7 +195,23 @@ always @(posedge clk) begin
     //???????이렇게 해도 되는거임?
     // IF_flush_real <= 0 ;
   end
-  else PC <= NEXT_PC;
+  // else PC <= NEXT_PC;  원래 이거......
+
+
+  // if(stall == 1) begin
+  //   PC <=PC;
+  // end
+  // else begin
+  //   PC <= NEXT_PC;
+  // end
+  else begin
+    if(stall == 1) begin
+    PC <=PC;
+    end
+    else begin
+      PC <= NEXT_PC;
+    end
+  end
 end
 
 ////////나중에 고쳐야함!!!!!///control hazard해결해야해서...
@@ -214,6 +242,7 @@ ifid_reg m_ifid_reg(
   .if_instruction (IF_instruction),
 
   .if_flush       (IF_flush),
+  .stall          (stall),
 
   .id_PC          (ID_PC),
   .id_pc_plus_4   (ID_PC_PLUS_4),
@@ -233,6 +262,8 @@ wire ID_reg_write_tmp;
 /* m_hazard: hazard detection unit */
 hazard m_hazard(
   // TODO: implement hazard detection unit & do wiring
+
+  ///////////////////////input//////////////////
   .ex_alu_result(EX_ALU_result),
   .ex_branch_target(EX_PC_branch_target),
   .ex_branch_taken(EX_taken),
@@ -242,12 +273,25 @@ hazard m_hazard(
   .id_mem_write(ID_mem_write_tmp),
   .id_reg_write(ID_reg_write_tmp),
 
+  //stall위한것
+  .ex_opcode(EX_opcode),
+  .mem_opcode(MEM_opcode),
+  .ex_rs1(EX_rs1),
+  .ex_rs2(EX_rs2),
+  .mem_rd(MEM_rd),
+
   // .if_instruction(IF_instruction_tmp),
 
+
+  ////////////////////////////output/////////////
   .NEXT_PC(NEXT_PC),
   .id_mem_write_real(ID_mem_write),
   .id_reg_write_real(ID_reg_write),
   // .if_instruction_real(IF_instruction),
+
+  ///stall위한것
+  .stall(stall),
+  .ex_mem_flush(EX_MEM_flush),
 
   .if_flush(IF_flush)
 );
@@ -312,6 +356,9 @@ idex_reg m_idex_reg(
   .id_rs2       (ID_rs2),
   .id_rd        (ID_rd),
   .id_opcode    (ID_opcode),  ///내가 추가!!!
+
+  .stall        (stall),
+  .flush        (IF_flush),
 
   .ex_PC        (EX_PC),
   .ex_pc_plus_4 (EX_PC_PLUS_4),
@@ -402,7 +449,7 @@ mux_3x1 alu_in_1_mux(
   .select(EX_ForwardA),
   .in1(EX_readdata1),
   .in2(MEM_alu_result),
-  .in3(WB_alu_result),
+  .in3(WB_write_data),
 
   .out(alu_in_1)
 );
@@ -411,7 +458,7 @@ mux_3x1 alu_in_2_mux(
   .select(EX_ForwardB),
   .in1(EX_ALU_in),
   .in2(MEM_alu_result),
-  .in3(WB_alu_result),
+  .in3(WB_write_data),
 
   .out(alu_in_2)
 );
@@ -451,6 +498,8 @@ exmem_reg m_exmem_reg(
   .ex_rd          (EX_rd),
 
   .ex_opcode      (EX_opcode),
+
+  .ex_mem_flush   (EX_MEM_flush),  //추가해줌!!!!!!!
   
   .mem_pc_plus_4  (MEM_PC_PLUS_4),
   .mem_pc_target  (MEM_PC_target),
