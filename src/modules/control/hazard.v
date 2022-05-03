@@ -14,14 +14,14 @@ module hazard
     input id_mem_write,
     input id_reg_write,
 
-    input [DATA_WIDTH-1:0] if_instruction,
+    // input [DATA_WIDTH-1:0] if_instruction,
 
     ////////////////////output///////////////////////
     output reg [DATA_WIDTH-1:0] NEXT_PC,
     //branch나 jump일어나는 경우 이 contorl signal을 0으로
     output reg id_mem_write_real,
     output reg id_reg_write_real,
-    output reg [DATA_WIDTH-1:0] if_instruction_real, //add x0 x0 x0넣음
+    // output reg [DATA_WIDTH-1:0] if_instruction_real, //add x0 x0 x0넣음
     // 32'b0000000_00000_00000_000_00000_0110011
 
     output if_flush
@@ -30,7 +30,7 @@ module hazard
 reg if_flush_tmp;
 
 always@(*) begin
-    if_instruction_real = if_instruction;  // 일단 주먹구구식으로 고쳐보자..
+    // if_instruction_real = if_instruction;  // 일단 주먹구구식으로 고쳐보자..
     
     // if(rstn == 0) begin
     //     if_flush = 0;

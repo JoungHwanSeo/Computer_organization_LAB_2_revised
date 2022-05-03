@@ -195,13 +195,13 @@ end
 ///////나중에 고쳐야함!!!!!
 
 
-wire [DATA_WIDTH-1:0] IF_instruction_tmp;
+// wire [DATA_WIDTH-1:0] IF_instruction_tmp;
 
 /* instruction: read current instruction from inst mem */
 instruction_memory m_instruction_memory(
   .address    (PC),
 
-  .instruction(IF_instruction_tmp)
+  .instruction(IF_instruction)
 );
 
 /* forward to IF/ID stage registers */
@@ -242,12 +242,12 @@ hazard m_hazard(
   .id_mem_write(ID_mem_write_tmp),
   .id_reg_write(ID_reg_write_tmp),
 
-  .if_instruction(IF_instruction_tmp),
+  // .if_instruction(IF_instruction_tmp),
 
   .NEXT_PC(NEXT_PC),
   .id_mem_write_real(ID_mem_write),
   .id_reg_write_real(ID_reg_write),
-  .if_instruction_real(IF_instruction),
+  // .if_instruction_real(IF_instruction),
 
   .if_flush(IF_flush)
 );
