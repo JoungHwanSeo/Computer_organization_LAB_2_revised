@@ -16,12 +16,18 @@ module ifid_reg #(
   input [DATA_WIDTH-1:0] if_pc_plus_4,
   input [DATA_WIDTH-1:0] if_instruction,
 
+  //추가
+  input if_flush,
+
   //////////////////////////////////////
   // Outputs
   //////////////////////////////////////
   output reg [DATA_WIDTH-1:0] id_PC,
   output reg [DATA_WIDTH-1:0] id_pc_plus_4,
-  output reg [DATA_WIDTH-1:0] id_instruction
+  output reg [DATA_WIDTH-1:0] id_instruction,
+
+  //추가
+  output reg id_flush
 );
 
 // TODO: Implement IF/ID pipeline register module
@@ -29,6 +35,10 @@ module ifid_reg #(
     id_PC <= if_PC;
     id_pc_plus_4 <= if_pc_plus_4;
     id_instruction <=if_instruction;
+
+    //추가
+    id_flush <= if_flush;
+    //
   end
 
 endmodule

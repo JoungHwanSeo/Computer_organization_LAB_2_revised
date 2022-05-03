@@ -74,8 +74,6 @@ wire ID_alu_src;
 wire ID_reg_write;
 wire [1:0] ID_jump;
 
-wire ID_mem_write_tmp; // 선언 for hazard
-wire ID_reg_write_tmp;
 
 ////////////////////////////////////////
 ////////////////////////////////////////
@@ -173,18 +171,32 @@ adder m_pc_plus_4_adder(
   .result (IF_PC_PLUS_4)
 );
 
+wire IF_flush;
+wire ID_flush;
+
+// reg IF_flush_real;
+
 always @(posedge clk) begin
   if (rstn == 1'b0) begin
     PC <= 32'h00000000;
+
+    //???????이렇게 해도 되는거임?
+    // IF_flush_real <= 0 ;
   end
   else PC <= NEXT_PC;
 end
 
 ////////나중에 고쳐야함!!!!!///control hazard해결해야해서...
-// assign NEXT_PC = IF_PC_PLUS_4;
+
+
+// assign NEXT_PC = IF_PC_PLUS_4;  
+
+
 ///////나중에 고쳐야함!!!!!
 
-wire [DATA_WIDTH-1:0] IF_instruction_tmp; //추가 선언
+
+wire [DATA_WIDTH-1:0] IF_instruction_tmp;
+
 /* instruction: read current instruction from inst mem */
 instruction_memory m_instruction_memory(
   .address    (PC),
@@ -193,6 +205,7 @@ instruction_memory m_instruction_memory(
 );
 
 /* forward to IF/ID stage registers */
+
 ifid_reg m_ifid_reg(
   // TODO: Add flush or stall signal if it is needed
   .clk            (clk),
@@ -200,15 +213,22 @@ ifid_reg m_ifid_reg(
   .if_pc_plus_4   (IF_PC_PLUS_4),
   .if_instruction (IF_instruction),
 
+  .if_flush       (IF_flush),
+
   .id_PC          (ID_PC),
   .id_pc_plus_4   (ID_PC_PLUS_4),
-  .id_instruction (ID_instruction)
+  .id_instruction (ID_instruction),
+
+  .id_flush       (ID_flush)
 );
 
 
 //////////////////////////////////////////////////////////////////////////////////
 // Instruction Decode (ID)
 //////////////////////////////////////////////////////////////////////////////////
+
+wire ID_mem_write_tmp;
+wire ID_reg_write_tmp;
 
 /* m_hazard: hazard detection unit */
 hazard m_hazard(
@@ -218,24 +238,26 @@ hazard m_hazard(
   .ex_branch_taken(EX_taken),
   .ex_jump(EX_jump),
   .if_pc_plus_4(IF_PC_PLUS_4),
-  .id_mem_write(ID_mem_write_tmp), ///
-  .id_reg_write(ID_reg_write_tmp), ///
+
+  .id_mem_write(ID_mem_write_tmp),
+  .id_reg_write(ID_reg_write_tmp),
+
   .if_instruction(IF_instruction_tmp),
 
   .NEXT_PC(NEXT_PC),
   .id_mem_write_real(ID_mem_write),
   .id_reg_write_real(ID_reg_write),
-  .if_instruction_real(IF_instruction)
+  .if_instruction_real(IF_instruction),
+
+  .if_flush(IF_flush)
 );
 
 /* m_control: control unit */
 //control signal을 ID단계에서 추출
-
-// wire ID_mem_write_tmp; // 선언 for hazard
-// wire ID_reg_write_tmp;
-
 control m_control(
   .opcode(ID_opcode),
+
+  .id_flush(ID_flush),
 
   .jump(ID_jump),
   .branch(ID_branch),
@@ -553,7 +575,7 @@ mux_2x1 m_mux_2x1(
 
 //write data jump도 고려해줘야함!!!!!!!
 always@(*) begin
-  case(WB_jump)  //EX_jump -> WB_jump....실화냐 이런 실수를...
+  case(WB_jump)  //EX_jump -> WB_jump....실화냐
     2'b00 : WB_write_data = WB_tmp_write_data;
     2'b01 : WB_write_data = WB_tmp_write_data; //branch인 경우인데 이는 어차피 update안됨. 아무거나 넣어줌
     2'b10 : WB_write_data = WB_PC_PLUS_4; //jump
