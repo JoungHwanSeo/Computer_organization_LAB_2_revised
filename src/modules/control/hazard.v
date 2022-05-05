@@ -42,11 +42,22 @@ module hazard
 
 reg if_flush_tmp;
 
+
 ////////////////////////////////////////Load Dependence... Stall
 reg Load_dep_1; // Load의 Data dependence있는지
 reg Load_dep_2;
 
 always@(*) begin
+
+    //이 경우는 forwarding과 다르게 rs1,2를 실제 사용하는지 여부도 중요함... cycle을 낭비할 수 있기 때문임
+        //rs1을 사용하지 않는 경우는 JAL인 경우! =>rs2의 경우 I-type와 JALR도 사용하지 않음
+        ///MEM 단계가 load이고, EX의 rs1이 rd와 같고, x0가 아니면 stall해야함
+        //MEM은 계속 진행되어 한 사이클 뒤에 Data forwarding 모듈이 EX-WB관계를 캐치해서 ALU에 해당 데이터 forwarding 해줄것
+
+        //근데 진짜 만약에 ex_rs1이랑 ex_rd가 같고 ex_opcode가 Load이면 무한 stall이 되는 것 아닌가??????????
+        //ex가 control signal만 0이 되어 MEM으로 들어가는거니까... 이건 나중에 생각해!!!!!!
+
+        ///////////ex_rs1을 0으로 보내버리면 되지 않을까????? EX_MEM_flush받으면
 
     //rs1
     if(ex_rs1 == mem_rd && mem_opcode == 7'b0000011 && ex_rs1 != 0 && ex_opcode != 7'b1101111) begin
@@ -86,7 +97,7 @@ always@(*) begin
     //     if_flush = 0;
     // end
     
-    casex(ex_jump)
+    case(ex_jump)
         2'b01: begin //branch
             if(ex_branch_taken == 1) begin
                 NEXT_PC = ex_branch_target;

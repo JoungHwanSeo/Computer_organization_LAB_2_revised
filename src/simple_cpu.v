@@ -206,7 +206,7 @@ always @(posedge clk) begin
   // end
   else begin
     if(stall == 1) begin
-    PC <=PC;
+      PC <=PC;
     end
     else begin
       PC <= NEXT_PC;
@@ -293,6 +293,7 @@ hazard m_hazard(
   .stall(stall),
   .ex_mem_flush(EX_MEM_flush),
 
+  //이건 control에서 flush용
   .if_flush(IF_flush)
 );
 
@@ -333,6 +334,11 @@ register_file m_register_file(
   .readdata2  (ID_readdata2)
 );
 
+//flush logic 추가/////////////////////
+wire real_ID_flush;
+assign real_ID_flush = ID_flush | IF_flush;
+//////////////////////////////////////////
+
 /* forward to ID/EX stage registers */
 idex_reg m_idex_reg(
   // TODO: Add flush or stall signal if it is needed
@@ -358,7 +364,8 @@ idex_reg m_idex_reg(
   .id_opcode    (ID_opcode),  ///내가 추가!!!
 
   .stall        (stall),
-  .flush        (IF_flush),
+  // .flush        (IF_flush),
+  .flush        (real_ID_flush),
 
   .ex_PC        (EX_PC),
   .ex_pc_plus_4 (EX_PC_PLUS_4),
@@ -444,11 +451,38 @@ mux_2x1 m_alu_mux(
     .out(EX_ALU_in)
 );
 
+//MEM에서 JALR이 있을시, 이 Dependence는 MEM의 PC+4로 업데이트됨....
+reg [DATA_WIDTH-1:0] forwarded_alu_second_tmp;
+
+reg JALR_dependence;  //디버깅용
+
+always@(*) begin
+  if(MEM_opcode == 7'b1100111) begin  //JALR이면
+    forwarded_alu_second_tmp = MEM_PC_PLUS_4;
+    JALR_dependence = 1;
+  end
+  else begin
+    forwarded_alu_second_tmp = MEM_alu_result;
+    JALR_dependence = 0;
+  end
+end
+
+wire [DATA_WIDTH-1:0] forwarded_alu_second;
+assign forwarded_alu_second = forwarded_alu_second_tmp;
+
+// wire JALR_dependence;
+
+// //디버깅용
+// assign JALR_dependence = (MEM_opcode == 7'b1100111);
+// //디버깅용
+
+//////////////////////////////////////////////////////////
 
 mux_3x1 alu_in_1_mux(
   .select(EX_ForwardA),
   .in1(EX_readdata1),
-  .in2(MEM_alu_result),
+  // .in2(MEM_alu_result),
+  .in2(forwarded_alu_second),
   .in3(WB_write_data),
 
   .out(alu_in_1)
@@ -457,10 +491,25 @@ mux_3x1 alu_in_1_mux(
 mux_3x1 alu_in_2_mux(
   .select(EX_ForwardB),
   .in1(EX_ALU_in),
-  .in2(MEM_alu_result),
+  // .in2(MEM_alu_result),
+  .in2(forwarded_alu_second),
   .in3(WB_write_data),
 
   .out(alu_in_2)
+);
+
+// wire [DATA_WIDTH-1:0] EX_Writedata;
+
+
+//Write Data는 sextimm이 고려되면 안되서 아예 새로운 mux 추가
+mux_3x1 EX_write_data_mux(
+  .select(EX_ForwardB),
+  .in1(EX_readdata2),
+  // .in2(MEM_alu_result),
+  .in2(forwarded_alu_second),
+  .in3(WB_write_data),
+
+  .out(EX_Writedata)
 );
 
 
@@ -492,8 +541,16 @@ exmem_reg m_exmem_reg(
   .ex_memtoreg    (EX_memtoreg),
   .ex_regwrite    (EX_regwrite),
   .ex_alu_result  (EX_ALU_result),
-  .ex_writedata   (EX_readdata2),  //rs2가 writedata
+
+
+  // .ex_writedata   (EX_readdata2),  //rs2가 writedata
   ///////write data jump인 경우 PC+4.... 어디서 이를 mux 해줘야..
+
+  // .ex_writedata   (EX_readdata2),  //rs2가 writedata
+  //위에서 고침!!!!!!!!!!!!!1
+  // .ex_writedata   (alu_in_2),  //Dependence가 있는 경우 rs2는 사실 alu_in_2가 되어야함
+  .ex_writedata   (EX_Writedata),  //이걸로 고침!!!!!!!!!!!1
+  
   .ex_funct3      (EX_funct3),
   .ex_rd          (EX_rd),
 

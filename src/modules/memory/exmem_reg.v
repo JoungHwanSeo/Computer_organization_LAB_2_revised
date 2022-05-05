@@ -75,17 +75,28 @@ module exmem_reg #(
     mem_alu_result <= ex_alu_result;
     mem_writedata <= ex_writedata;
     mem_funct3 <= ex_funct3;
-    mem_rd <= ex_rd;
 
-    mem_opcode <= ex_opcode;//추가됨
+    //stall되어 rs1과 rd가 똑같은 명령어인 경우 신셩 안써야 할 명령어에서 forwarding이 생길 수 있음
+    // mem_rd <= ex_rd;
+    /////////////////////////
+
+    // mem_opcode <= ex_opcode;//추가됨
 
     if(ex_mem_flush == 1) begin
       mem_memwrite <= 0;
       mem_regwrite <= 0;
+
+      mem_opcode <= 7'b0000000;  //LW 연속 case 방지
+
+      mem_rd <= 0; ///stall되어 rs1과 rd가 똑같은 명령어인 경우 신셩 안써야 할 명령어에서 forwarding이 생길 수 있음
     end
     else begin
       mem_memwrite <= ex_memwrite;
       mem_regwrite <= ex_regwrite;
+
+      mem_opcode <= ex_opcode;  // LW 연속 case 방지
+
+      mem_rd <= ex_rd;
     end
 
   end
