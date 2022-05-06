@@ -32,6 +32,13 @@ module hazard
     input [4:0] id_rs2,
     input [4:0] ex_rd,
 
+    //SW stall안하면서 생긴 추가 구현
+
+    // input [6:0] mem_opcode, //이게 store이고
+    // input [6:0] wb_opcode, //이게 load이고
+    // input [4:0] mem_rs2, 
+    // input [4:0] wb_rd, //이 두개가 같으면 Memory의 wirte_data를 mux처리해주면 됨
+
     ////////////////////output///////////////////////
     output reg [DATA_WIDTH-1:0] NEXT_PC,
     //branch나 jump일어나는 경우 이 contorl signal을 0으로
@@ -45,6 +52,10 @@ module hazard
     output reg ex_mem_flush, //현재 EX에 있는 명령어는 의미없이 지나가도록... 앞의 reg stall해서 똑같은 명령어 한번 더 볼거임
 
     output if_flush
+
+    
+    //SW stall안하면서 생긴 추가 구현
+    // output forward_Mem;
 );
 
 reg if_flush_tmp;
@@ -70,6 +81,15 @@ always@(*) begin
     if(id_rs1 == ex_rd && ex_opcode == 7'b0000011 && id_rs1 != 0 && id_opcode != 7'b1101111) begin
         //EX가 Load이고 id의 rs1 == ex의 rd이고 rs1이 x0아니고 rs1이 사용되는 명령어일시 (JAL아닐시)
         Load_dep_1 = 1;
+
+        //이건 id가 store 여부 상관없이 그냥 stall해야함
+
+        // if(id_opcode != 7'b0100011) begin //id가 store 아닌경우
+        //     Load_dep_1 = 1;
+        // end
+        // else begin //id가 store인 경우에는 굳이 stall해줄 필요 없음! 
+        //     Load_dep_1 = 0;
+        // end
     end
     else begin
         Load_dep_1 = 0;
@@ -78,7 +98,13 @@ always@(*) begin
     if(id_rs2 == ex_rd && ex_opcode == 7'b0000011 && id_rs2 != 0 && id_opcode != 7'b1101111 && id_opcode != 7'b1100011 && id_opcode != 7'b0010011 && id_opcode != 7'b1100111 && id_opcode != 7'b0000011) begin
         //EX가 Load이고 id의 rs2 == ex의 rd이고 rs2가 x0아니고 rs2가 사용되는 명령어일시 (JAL / Branch / I-type아닐시)
         //id의 rs2가 사용되지 않는 명령어 JALR , Load아니라는 조건 추가
-        Load_dep_2 = 1;
+        // Load_dep_2 = 1;
+        if(id_opcode != 7'b0100011) begin  //id가 store 아니면 stall해야함
+            Load_dep_2 = 1;
+        end
+        else begin  //id가 store인 경우에는 stall해줄 필요 없다.
+            Load_dep_2 = 0;
+        end
     end
     else begin
         Load_dep_2 = 0;

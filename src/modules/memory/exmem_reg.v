@@ -34,6 +34,10 @@ module exmem_reg #(
 
   // input ex_mem_flush,
   ////////////////////////
+
+  //////stall logic 위해 이거 추가
+  input [4:0] ex_rs2,
+  ////////////////////////
   
   //////////////////////////////////////
   // Outputs
@@ -58,8 +62,10 @@ module exmem_reg #(
   output reg [4:0] mem_rd,
 
   //////내가 추가!!!!!!!!!!!!
-  output reg [6:0] mem_opcode
+  output reg [6:0] mem_opcode,
   //////////////////
+
+  output reg [4:0] mem_rs2
 );
 
 // TODO: Implement EX / MEM pipeline register module
@@ -88,6 +94,8 @@ module exmem_reg #(
     mem_opcode <= ex_opcode;  // LW 연속 case 방지
 
     mem_rd <= ex_rd;
+
+    mem_rs2 <= ex_rs2;
 
     // if(ex_mem_flush == 1) begin
     //   mem_memwrite <= 0;

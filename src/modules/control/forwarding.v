@@ -17,17 +17,36 @@ module forwarding (
     input [6:0] ex_opcode,
     ///////////////////////////
 
+    ///////SW, Load stall 필요 없는 경우 추가
+    //mem이 SW이고 WB가 Load이고
+    input [4:0] mem_rs2, 
+    // input [4:0] wb_rd, //이 두개가 같으면 Memory의 wirte_data를 mux처리해주면 됨
+    //////////////////////////////////
+
     output reg [1:0] forwardA,
     output reg [1:0] forwardB,
 
     //SW에서 Write data 선택 logic....
     //5.6 19시 48분 추가
-    output reg [1:0] forwardS
+    output reg [1:0] forwardS,
+
+    ///////SW, Load stall 필요 없는 경우 추가
+    output reg forwardmem // 
 );
 
 /////////////Load의 경우????????
 
 always@(*) begin
+    ///////////////////MEM에 store, WB에 Load인 경우 그리고 wb rd가 mem rs2와 같은 경우
+    if(mem_rs2 == wb_rd && mem_opcode == 7'b0100011 && wb_opcode == 7'b0000011) begin
+        forwardmem = 1;
+    end
+    else begin
+        forwardmem = 0;
+    end
+    ////////////////////////////////////////////////////////////////////////////////
+
+
     ///////////////////////@ rs1 @///////////////////////
     if(ex_rs1 == mem_rd && ex_rs1 != 0 && mem_opcode != 7'b1100011 && mem_opcode !=7'b0100011 && mem_opcode != 7'b0000011) begin
         //ALU에 들어갈 rs1이 뒤의 rd와 같고, rs1이 x0가 아니고, mem이 Store, Branch아니면(No Write), 그리고 Load아니면 [거리 1]
@@ -36,7 +55,7 @@ always@(*) begin
     else if(ex_rs1 == wb_rd && ex_rs1 != 0 && wb_opcode != 7'b1100011 && wb_opcode !=7'b0100011) begin
         //이 경우 거리가 2로 load아니라는 조건 필요 없음
         forwardA = 2'b10; //WB에서 hazard 
-    end
+    end 
     else begin
         forwardA = 2'b00;
     end

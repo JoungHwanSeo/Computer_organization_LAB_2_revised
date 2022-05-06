@@ -530,6 +530,9 @@ mux_3x1 EX_write_data_mux(
   .out(EX_Writedata)
 );
 
+wire EX_forwardM;  //DATA memory 들어가기 전 mux logic
+
+wire [4:0] MEM_rs2; //store, load연속인 경우 stall 위한 wire
 
 forwarding m_forwarding(
   // TODO: implement forwarding unit & do wiring
@@ -542,11 +545,18 @@ forwarding m_forwarding(
   .wb_opcode  (WB_opcode),
   .ex_opcode  (EX_opcode),
 
+  .mem_rs2    (MEM_rs2),
+  // .wb_rd      (WB_rd),
+
   //output
   .forwardA   (EX_ForwardA),
   .forwardB   (EX_ForwardB),
-  .forwardS   (EX_ForwardS)
+  .forwardS   (EX_ForwardS),
+
+  .forwardmem (EX_forwardM) //이게 1이면 WB의 write data가져와야함
 );
+
+// wire [4:0] MEM_rs2; //store, load연속인 경우 stall 위한 wire
 
 /* forward to EX/MEM stage registers */
 exmem_reg m_exmem_reg(
@@ -576,6 +586,8 @@ exmem_reg m_exmem_reg(
 
   .ex_opcode      (EX_opcode),
 
+  .ex_rs2         (EX_rs2),
+
   // .ex_mem_flush   (EX_MEM_flush),  //추가해줌!!!!!!!
   
   .mem_pc_plus_4  (MEM_PC_PLUS_4),
@@ -591,7 +603,9 @@ exmem_reg m_exmem_reg(
   .mem_funct3     (MEM_funct3),
   .mem_rd         (MEM_rd),
 
-  .mem_opcode     (MEM_opcode)
+  .mem_opcode     (MEM_opcode),
+
+  .mem_rs2        (MEM_rs2)
 );
 
 
@@ -634,11 +648,22 @@ end
 
 wire [DATA_WIDTH-1:0] MEM_mem_read_data; //데이터 읽은 값
 
+wire [DATA_WIDTH-1:0] MEM_write_data_real;
+
+mux_2x1 m_write_data_mux(
+  .select     (EX_forwardM),
+  .in1        (MEM_writedata),
+  .in2        (WB_write_data),
+
+  .out        (MEM_write_data_real)
+);
+
 /* m_data_memory : main memory module */
 data_memory m_data_memory(
   .clk         (clk),
   .address     (MEM_alu_result),
-  .write_data  (MEM_writedata),
+  // .write_data  (MEM_writedata),
+  .write_data  (MEM_write_data_real),
   .mem_read    (MEM_memread),
   .mem_write   (MEM_memwrite),
   .maskmode    (maskmode),
