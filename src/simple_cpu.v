@@ -515,9 +515,13 @@ mux_3x1 alu_in_2_mux(
 // wire [DATA_WIDTH-1:0] EX_Writedata;
 
 
+wire [1:0] EX_ForwardS;
+//새로 추가
+
 //Write Data는 sextimm이 고려되면 안되서 아예 새로운 mux 추가
 mux_3x1 EX_write_data_mux(
-  .select(EX_ForwardB),
+  // .select(EX_ForwardB),
+  .select(EX_ForwardS),
   .in1(EX_readdata2),
   // .in2(MEM_alu_result),
   .in2(forwarded_alu_second),
@@ -540,7 +544,8 @@ forwarding m_forwarding(
 
   //output
   .forwardA   (EX_ForwardA),
-  .forwardB   (EX_ForwardB)
+  .forwardB   (EX_ForwardB),
+  .forwardS   (EX_ForwardS)
 );
 
 /* forward to EX/MEM stage registers */

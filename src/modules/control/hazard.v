@@ -129,7 +129,7 @@ always@(*) begin
             // if_instruction_real = 32'b0000000_00000_00000_000_00000_0000000;
             if_flush_tmp = 1;
         end
-        2'b10:begin
+        2'b10:begin  //JALR
             NEXT_PC = ex_alu_result;
             id_mem_write_real = 0;
             id_reg_write_real = 0;

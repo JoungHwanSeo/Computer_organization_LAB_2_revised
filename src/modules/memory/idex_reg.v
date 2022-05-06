@@ -92,7 +92,7 @@ module idex_reg #(
       ex_branch <= 0;
       ex_aluop <= 0;
       ex_alusrc <= 0;
-      ex_jump <= 0;
+      ex_jump <= 2'b00;
       ex_memread <= 0;
       ex_memwrite <= 0;
       ex_memtoreg <= 0;
