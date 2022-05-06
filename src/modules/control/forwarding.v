@@ -13,6 +13,10 @@ module forwarding (
     input [6:0] mem_opcode,//opcode도 계속 pipeline해야하나...
     input [6:0] wb_opcode,
 
+    //추가/////////////////////
+    input [6:0] ex_opcode,
+    ///////////////////////////
+
     output reg [1:0] forwardA,
     output reg [1:0] forwardB
 );
@@ -34,11 +38,14 @@ always@(*) begin
     end
 
     ////////////////////////rs2////////////////////////////
-    if(ex_rs2 == mem_rd && ex_rs2 != 0 && mem_opcode != 7'b1100011 && mem_opcode !=7'b0100011 && mem_opcode != 7'b0000011) begin
+    if(ex_rs2 == mem_rd && ex_rs2 != 0 && mem_opcode != 7'b1100011 && mem_opcode !=7'b0100011 && mem_opcode != 7'b0000011 && ex_opcode != 7'b0010011 && ex_opcode != 7'b0000011 && ex_opcode != 1100111) begin
         //ALU에 들어갈 rs2가 뒤의 rd와 같고, rs1이 x0가 아니고, mem이 Store, Branch아니면(No Write), 그리고 Load아니면 [거리 1]
+        //EX가 I-type 아니라는 조건 추가!!!!!!!! 5/6
+        //EX가 JALR, Load아니라는 조건 추가
         forwardB = 2'b01; //Mem에서 Hazard..
     end
-    else if(ex_rs2 == wb_rd && ex_rs2 != 0 && wb_opcode != 7'b1100011 && wb_opcode !=7'b0100011) begin
+    else if(ex_rs2 == wb_rd && ex_rs2 != 0 && wb_opcode != 7'b1100011 && wb_opcode !=7'b0100011   && ex_opcode != 7'b0010011 && ex_opcode != 7'b0000011 && ex_opcode != 1100111) begin
+        //EX_opcode가 I-type JALR Load아니라는 조건이 또 추가됨
         forwardB = 2'b10; //WB에서 hazard
     end
     else begin

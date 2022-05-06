@@ -45,13 +45,28 @@ module ifid_reg #(
     // id_flush <= if_flush;
     // //
     if (stall == 1) begin
-      id_PC <= id_PC;
-      id_pc_plus_4 <= id_pc_plus_4;
-      id_instruction <=id_instruction;
+      // id_PC <= id_PC;
+      // id_pc_plus_4 <= id_pc_plus_4;
+      // id_instruction <=id_instruction;
 
-      //추가
-      id_flush <= id_flush;
-      //
+      // //추가
+      // id_flush <= id_flush;
+
+      if(if_flush == 1) begin
+        id_PC <= if_PC;
+        id_pc_plus_4 <= if_pc_plus_4;
+        id_instruction <=if_instruction;
+
+        id_flush <= if_flush;
+      end
+      else begin
+        id_PC <= id_PC;
+        id_pc_plus_4 <= id_pc_plus_4;
+        id_instruction <=id_instruction;
+
+        id_flush <= id_flush;
+      end
+    
     end
     else begin
       id_PC <= if_PC;

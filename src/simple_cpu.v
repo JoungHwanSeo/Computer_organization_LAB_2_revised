@@ -206,7 +206,13 @@ always @(posedge clk) begin
   // end
   else begin
     if(stall == 1) begin
-      PC <=PC;
+      // PC <=PC;
+      if(IF_flush == 1) begin
+        PC <= NEXT_PC;       
+      end
+      else begin
+        PC <= PC;
+      end
     end
     else begin
       PC <= NEXT_PC;
@@ -274,11 +280,19 @@ hazard m_hazard(
   .id_reg_write(ID_reg_write_tmp),
 
   //stall위한것
+
+  // .ex_opcode(EX_opcode),
+  // .mem_opcode(MEM_opcode),
+  // .ex_rs1(EX_rs1),
+  // .ex_rs2(EX_rs2),
+  // .mem_rd(MEM_rd),
+
+  .id_opcode(ID_opcode),
   .ex_opcode(EX_opcode),
-  .mem_opcode(MEM_opcode),
-  .ex_rs1(EX_rs1),
-  .ex_rs2(EX_rs2),
-  .mem_rd(MEM_rd),
+  .id_rs1(ID_rs1),
+  .id_rs2(ID_rs2),
+  .ex_rd(EX_rd),
+
 
   // .if_instruction(IF_instruction_tmp),
 
@@ -291,7 +305,7 @@ hazard m_hazard(
 
   ///stall위한것
   .stall(stall),
-  .ex_mem_flush(EX_MEM_flush),
+  // .ex_mem_flush(EX_MEM_flush),
 
   //이건 control에서 flush용
   .if_flush(IF_flush)
@@ -522,6 +536,7 @@ forwarding m_forwarding(
   .wb_rd      (WB_rd),
   .mem_opcode (MEM_opcode),
   .wb_opcode  (WB_opcode),
+  .ex_opcode  (EX_opcode),
 
   //output
   .forwardA   (EX_ForwardA),
@@ -556,7 +571,7 @@ exmem_reg m_exmem_reg(
 
   .ex_opcode      (EX_opcode),
 
-  .ex_mem_flush   (EX_MEM_flush),  //추가해줌!!!!!!!
+  // .ex_mem_flush   (EX_MEM_flush),  //추가해줌!!!!!!!
   
   .mem_pc_plus_4  (MEM_PC_PLUS_4),
   .mem_pc_target  (MEM_PC_target),

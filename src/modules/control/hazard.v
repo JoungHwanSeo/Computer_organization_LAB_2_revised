@@ -19,11 +19,18 @@ module hazard
     // input [DATA_WIDTH-1:0] if_instruction,
 
     ////////////////Stall 위한 input
+
+    // input [6:0] ex_opcode,
+    // input [6:0] mem_opcode,
+    // input [4:0] ex_rs1,
+    // input [4:0] ex_rs2,
+    // input [4:0] mem_rd,
+
+    input [6:0] id_opcode,
     input [6:0] ex_opcode,
-    input [6:0] mem_opcode,
-    input [4:0] ex_rs1,
-    input [4:0] ex_rs2,
-    input [4:0] mem_rd,
+    input [4:0] id_rs1,
+    input [4:0] id_rs2,
+    input [4:0] ex_rd,
 
     ////////////////////output///////////////////////
     output reg [DATA_WIDTH-1:0] NEXT_PC,
@@ -60,16 +67,17 @@ always@(*) begin
         ///////////ex_rs1을 0으로 보내버리면 되지 않을까????? EX_MEM_flush받으면
 
     //rs1
-    if(ex_rs1 == mem_rd && mem_opcode == 7'b0000011 && ex_rs1 != 0 && ex_opcode != 7'b1101111) begin
-        //MEM이 Load이고 ex의 rs1 == mem의 rd이고 rs1이 x0아니고 rs1이 사용되는 명령어일시 (JAL아닐시)
+    if(id_rs1 == ex_rd && ex_opcode == 7'b0000011 && id_rs1 != 0 && id_opcode != 7'b1101111) begin
+        //EX가 Load이고 id의 rs1 == ex의 rd이고 rs1이 x0아니고 rs1이 사용되는 명령어일시 (JAL아닐시)
         Load_dep_1 = 1;
     end
     else begin
         Load_dep_1 = 0;
     end
     //rs2
-    if(ex_rs2 == mem_rd && mem_opcode == 7'b0000011 && ex_rs2 != 0 && ex_opcode != 7'b1101111 && ex_opcode != 7'b1100011 && ex_opcode != 7'b0010011) begin
-        //MEM이 Load이고 ex의 rs2 == mem의 rd이고 rs2가 x0아니고 rs2가 사용되는 명령어일시 (JAL / Branch / I-type아닐시)
+    if(id_rs2 == ex_rd && ex_opcode == 7'b0000011 && id_rs2 != 0 && id_opcode != 7'b1101111 && id_opcode != 7'b1100011 && id_opcode != 7'b0010011 && id_opcode != 7'b1100111 && id_opcode != 7'b0000011) begin
+        //EX가 Load이고 id의 rs2 == ex의 rd이고 rs2가 x0아니고 rs2가 사용되는 명령어일시 (JAL / Branch / I-type아닐시)
+        //id의 rs2가 사용되지 않는 명령어 JALR , Load아니라는 조건 추가
         Load_dep_2 = 1;
     end
     else begin
@@ -80,7 +88,7 @@ end
 
 always@(*) begin
     stall = Load_dep_1 | Load_dep_2;
-    ex_mem_flush = Load_dep_1 | Load_dep_2;
+    // ex_mem_flush = Load_dep_1 | Load_dep_2;
 end
 
 
