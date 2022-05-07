@@ -95,8 +95,8 @@ always@(*) begin
         Load_dep_1 = 0;
     end
     //rs2
-    if(id_rs2 == ex_rd && ex_opcode == 7'b0000011 && id_rs2 != 0 && id_opcode != 7'b1101111 && id_opcode != 7'b1100011 && id_opcode != 7'b0010011 && id_opcode != 7'b1100111 && id_opcode != 7'b0000011) begin
-        //EX가 Load이고 id의 rs2 == ex의 rd이고 rs2가 x0아니고 rs2가 사용되는 명령어일시 (JAL / Branch / I-type아닐시)
+    if(id_rs2 == ex_rd && ex_opcode == 7'b0000011 && id_rs2 != 0 && id_opcode != 7'b1101111 /*&& id_opcode != 7'b1100011*/ && id_opcode != 7'b0010011 && id_opcode != 7'b1100111 && id_opcode != 7'b0000011) begin
+        //EX가 Load이고 id의 rs2 == ex의 rd이고 rs2가 x0아니고 rs2가 사용되는 명령어일시 (JAL / Branch이건 rs2사용함..ㅋㅋㅋ실수! / I-type아닐시)
         //id의 rs2가 사용되지 않는 명령어 JALR , Load아니라는 조건 추가
         // Load_dep_2 = 1;
         if(id_opcode != 7'b0100011) begin  //id가 store 아니면 stall해야함
